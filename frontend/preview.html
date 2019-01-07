@@ -1,0 +1,155 @@
+<html lang="en" data-lt-installed="true" class="gr__getbootstrap_com">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Album example for Bootstrap</title>
+
+  <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+    crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css">
+  <link>
+  <style>
+    .scrolling-wrapper {
+      overflow-x: scroll;
+      overflow-y: hidden;
+      white-space: nowrap;
+      min-height: 75px;
+      width: 100%;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .scrolling-wrapper .card-image {
+      border: 1px solid white;
+      min-width: 350px;
+      max-width: 350px;
+      background: black;
+      display: inline-block;
+      border: 2px dotted gray;
+    }
+  </style>
+
+<body>
+
+  <header>
+    <!-- Just an image -->
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="#">
+        Document Cards
+      </a>
+    </nav>
+  </header>
+
+  <main role="main">
+    <div class="album py-5 bg-light">
+      <div class="m-4">
+
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header" aria-expanded="true" data-toggle="collapse" href="#collapseabstract">
+                <h5>Title: <span id="document-title"></span></h5>
+                <h5>Author(s): <span id="document-authors"></span></h5>
+              </div>
+              <div id="collapseabstract" class="card-body collapse show">
+                <h3>Abstract</h3>
+                <p id="document-abstract"></p>
+              </div>
+            </div>
+            <br /><br />
+          </div>
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">Document</div>
+              <div class="card-body row">
+                <div class="col-md-4">
+                  <div id="document-words" style="width: 100%; height: 600px;"></div>
+                </div>
+                <div class="col-md-8" id="pdf_embed">
+                </div>
+              </div>
+              
+            </div>
+            <br /><br />
+          </div>
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header" aria-expanded="true" data-toggle="collapse" href="#collapseimgs">Images</div>
+              <div id="collapseimgs" class="card-body collapse show">
+                <div id="document-images" class="scrolling-wrapper">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bootstrap core JavaScript
+    ================================================== -->
+  <!-- Placed at the end of the document so the pages load faster -->
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js"></script>
+  <script>
+
+    function searchTerm(search) {
+      var options = {
+        height: "600px",
+        pdfOpenParams: {
+          search: search
+        }
+      };
+      PDFObject.embed("../file.pdf", "#pdf_embed", options);
+    }
+    var doc = {}
+    doc.title = "Project Proposal Document Cards"
+    doc.authors = "Jakovljevic Igor"
+    doc.abstract = "The goal of the given problem set is the creation of a system that consumes PDF documents and produces from those documents short but informative versions of them. The name of the short representation of documents is Document Cards. The purpose of the shorten versions of documents is to give the reader a better insight of the document and enable a quick search of the documents main topic and core idea."
+    doc.images = []
+    for (var i = 16; i < 30; i++) {
+      doc.images.push("../data/p0-" + i + ".png")
+    }
+    function init_document(doc) {
+      $('#document-title').html(doc.title);
+      $('#document-authors').html(doc.authors);
+      $('#document-abstract').html(doc.abstract);
+      for (var i = 0; i < doc.images.length; i++) {
+        $('#document-images').append('<img src="' + doc.images[i] + '" class="card-image" />');
+      }
+
+    }
+    doc.word_list = [
+      { text: "large document ", weight: 50 },
+      { text: "classes", weight: 44 }
+    ];
+    $(function () {
+      $("#document-words").jQCloud(doc.word_list,
+        {
+          shape: "rectangular",
+          autoResize: true
+        });
+      var options = {
+        height: "600px"
+      };
+      PDFObject.embed("../file.pdf", "#pdf_embed", options);
+      $('#document-words').on("click", "span", function () { searchTerm($(this).text()) });
+      init_document(doc);
+
+    });
+  </script>
+
+</body>
+
+</html>
