@@ -152,8 +152,7 @@ def create_app(config_name):
                     abstract = myfile.read()             
             word_dist_location = file_dir + "worddist.json"   
             if os.path.isfile(word_dist_location):
-                with open(word_dist_location, 'r') as myfile:
-                    print("HERE")
+                with open(word_dist_location, 'r') as myfile:                    
                     word_dist = json.load(myfile)             
 
             file_dir = file_dir + "/"
