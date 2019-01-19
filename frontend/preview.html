@@ -6,12 +6,13 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
-  <title>Album example for Bootstrap</title>
+  <title>Document Cards</title>
 
   <!-- Bootstrap core CSS -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
     crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
   <link>
   <style>
     .scrolling-wrapper {
@@ -31,6 +32,22 @@
       display: inline-block;
       border: 2px dotted gray;
     }
+    
+    .search-modal{
+      width: 55px;
+      height: 30px;
+      position: fixed;
+      bottom: 10;
+      left: 10;
+      background: white;
+      z-index: 2;
+    }
+
+    .search-modal.open{
+      width: 30%;
+      height: 30%;
+    }
+
   </style>
 
 <body>
@@ -38,7 +55,7 @@
   <header>
     <!-- Just an image -->
     <nav class="navbar navbar-dark bg-dark">
-      <a class="navbar-brand" href="#">
+      <a class="navbar-brand" href="index.html">
         Document Cards
       </a>
     </nav>
@@ -47,7 +64,11 @@
   <main role="main">
     <div class="album py-5 bg-light">
       <div class="m-4">
-
+          <div class="search-modal open">
+          <div><button class="btn btn-danger" onclick="toggleClassSearch()"><i class="fas fa-chevron-down"></i> <i class="fas fa-chevron-up"></i></button></div>
+          <button style="display: none;" id='reload-search' onclick="loadIframe('bing-search','http://www.stackoverflow.com')"></button>
+          <iframe id="bing-search" style="width:100%;height:100%" src="https://www.bing.com?q=test" ></iframe>
+          </div>
         <div class="row">
           <div class="col-md-12">
             <div class="card">
@@ -58,6 +79,7 @@
               <div id="collapseabstract" class="card-body collapse show">
                 <h3>Abstract</h3>
                 <p id="document-abstract"></p>
+                <span id="document-keywords" class="badge badge-secondary"></span>
               </div>
             </div>
             <br /><br />
@@ -94,8 +116,8 @@
   <!-- Bootstrap core JavaScript
     ================================================== -->
   <!-- Placed at the end of the document so the pages load faster -->
-  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
-    crossorigin="anonymous"></script>
+  
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js" ></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
     crossorigin="anonymous"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
@@ -103,49 +125,97 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js"></script>
   <script>
-
+    function loadIframe(iframeName, url) {
+        var $iframe = $('#' + iframeName);
+        if ( $iframe.length ) {
+            $iframe.attr('src',url);   
+            return false;
+        }
+        return true;
+    }
+    var doc_location = "";
+    var images_dir = "";
+    function toggleClassSearch(){
+      $(".search-modal ").toggleClass("open")
+    }
     function searchTerm(search) {
+      var new_bing_link = "loadIframe('bing-search','https://www.bing.com?q="+ search + "')";
+      $('#reload-search').attr('onclick', new_bing_link);
+      $('#reload-search').trigger('click')
       var options = {
         height: "600px",
         pdfOpenParams: {
           search: search
         }
-      };
-      PDFObject.embed("../file.pdf", "#pdf_embed", options);
+      };      
+      PDFObject.embed(doc_location, "#pdf_embed", options);
     }
-    var doc = {}
-    doc.title = "Project Proposal Document Cards"
-    doc.authors = "Jakovljevic Igor"
-    doc.abstract = "The goal of the given problem set is the creation of a system that consumes PDF documents and produces from those documents short but informative versions of them. The name of the short representation of documents is Document Cards. The purpose of the shorten versions of documents is to give the reader a better insight of the document and enable a quick search of the documents main topic and core idea."
-    doc.images = []
-    for (var i = 16; i < 30; i++) {
-      doc.images.push("../data/p0-" + i + ".png")
-    }
+    var doc = {}    
+        
     function init_document(doc) {
       $('#document-title').html(doc.title);
       $('#document-authors').html(doc.authors);
       $('#document-abstract').html(doc.abstract);
+      $('#document-keywords').html(doc.keywords);
       for (var i = 0; i < doc.images.length; i++) {
-        $('#document-images').append('<img src="' + doc.images[i] + '" class="card-image" />');
-      }
+        $('#document-images').append('<img data-enlargable style="cursor: zoom-in" src="' + images_dir + doc.images[i] + '" class="card-image" />');
+      } 
+      $('img[data-enlargable]').addClass('img-enlargable').click(function(){
+        var src = $(this).attr('src');
+        $('<div>').css({
+            background: 'RGBA(0,0,0,.5) url('+src+') no-repeat center',
+            backgroundSize: 'contain',
+            width:'100%', height:'100%',
+            position:'fixed',
+            zIndex:'10000',
+            top:'0', left:'0',
+            cursor: 'zoom-out'
+        }).click(function(){
+            $(this).remove();
+        }).appendTo('body');
+    });
 
     }
     doc.word_list = [
-      { text: "large document ", weight: 50 },
-      { text: "classes", weight: 44 }
+      // { text: "large document ", weight: 50 },
+      // { text: "classes", weight: 44 },
+      // { text: "problem", weight: 44 }
     ];
     $(function () {
-      $("#document-words").jQCloud(doc.word_list,
-        {
-          shape: "rectangular",
-          autoResize: true
-        });
+      
       var options = {
         height: "600px"
       };
-      PDFObject.embed("../file.pdf", "#pdf_embed", options);
+      var search_id = location.search.replace('?id=', "");
+      var url_endpoint = 'http://127.0.0.1:5000/';
+      $.get(url_endpoint + "getdocument/"+search_id, function(data, status) {            
+            doc_location = data['location'].replace('/mnt/c/', 'file:///c:/');
+            images_dir = data['images_base_dir'].replace('/mnt/c/', 'file:///c:/');                       
+            doc.images = data['images'];
+            var file_info = data["file_info"][0];
+
+            doc.title = file_info["/Title"];
+            doc.authors = file_info["/Author"];
+            doc.keywords = file_info["/Keywords"];
+            doc.abstract  = data["abstract"];         
+            var word_dist  = data["word_dist"];            
+            for (var i = 0; i < word_dist.length; i++){
+              var new_word_dist = {};
+              new_word_dist["text"] = word_dist[i][0];
+              new_word_dist["weight"] = word_dist[i][1];
+              doc.word_list.push(new_word_dist);
+            }
+            $("#document-words").jQCloud(doc.word_list,
+            {
+              shape: "rectangular",
+              autoResize: true
+            });
+            init_document(doc);   
+            searchTerm("");
+      })
+      
       $('#document-words').on("click", "span", function () { searchTerm($(this).text()) });
-      init_document(doc);
+      
 
     });
   </script>

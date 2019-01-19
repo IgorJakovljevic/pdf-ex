@@ -6,7 +6,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Album example for Bootstrap</title>
+    <title>Document Cards</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
@@ -28,49 +28,70 @@
     <main role="main">
         <div class="album py-5 bg-light">
             <div class="container">
-
                 <div class="row">
-                    <div class="col-md-4">
-                        <div class="card mb-4 box-shadow">
-                            <div class="card-body">
-                                <h5 class="card-title">Card title</h5>
-                                <p class="card-text">This is a wider card with supporting text below as a natural
-                                    lead-in to additional content. This content is a little bit longer.
-                                    <br /><br />
-                                    <small class="text-muted">Author 1, Author 2, Author 3, Author 4 and Author 5</small>
-                                </p>
-
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="btn-group">
-                                        <a type="button" class="btn btn-sm btn-outline-secondary" href="preview.html">View</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="col-3">
+                        <form id="upload_file" method="POST" class="custom-file">
+                            <input type="file" name="file" accept="application/pdf"  id="customFile">                            
+                            <input type="submit" value="Upload File">                            
+                        </form>
+                        <br/><br/><br/>
                     </div>
+                    <hr class="col-12">
+                </div>
+                <div id="documents" class="row">
+                    
                 </div>
             </div>
         </div>
 
     </main>
 
-    <footer class="text-muted">
-        <div class="container">
-
-            <p>©IgorJakovljevic 2019</p>
-        </div>
-    </footer>
-
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
-        crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
         crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
+    <script>
+        var url_endpoint = 'http://127.0.0.1:5000/';
+        $.get(url_endpoint + "getdocuments", function(data, status) {
+            for(var i = 0; i< data.length; i++){
+                doc = data[i];
+                var template = '<div class="col-md-4"><div class="card mb-4 box-shadow"><div class="card-body"><h5 class="card-title">'+doc.name+'</h5><p class="card-text">Text<br /><br /> <small class="text-muted">'+doc.information[0]['/Author']+'</small></p><div class="d-flex justify-content-between align-items-center">';
+                template += '<div class="btn-group"><a type="button" class="btn btn-sm btn-outline-secondary" href="preview.html?id='+doc.id+'">View</a></div></div></div></div></div>';
+                $('#documents').append(template)
+            }
+            
+        })
 
+        $.get(url_endpoint + "return-file", function(data, status) {
+            console.error(data);            
+        })
+
+        $("#upload_file").on('submit', (function (e) {
+            e.preventDefault();
+            $.ajax({
+                    url: "http://127.0.0.1:5000/fileupload",
+                    type: "POST",
+                    data: new FormData(this),
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    beforeSend: function () {
+                        //$("#preview").fadeOut();
+                        $("#err").fadeOut();
+                    },
+                    success: function (data) {
+                        console.error(data);
+                    },
+                    error: function (e) {
+                        console.error(e);
+                    }
+                });
+        }));
+    </script>
 
 </body>
 
