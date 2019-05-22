@@ -13,29 +13,52 @@
         crossorigin="anonymous">
     
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css">
-
+<style>
+#circle {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    z-index: 10;
+    background: black;
+    opacity: 0.7;
+    text-align: center;
+}
+</style>
 
 <body>
+    <div id="circle">
+        <img src="source.gif" style="
+            margin-top: 5%;
+            height: 80%;
+        ">
+    </div>
 
-    <header>
         <!-- Just an image -->
-        <nav class="navbar navbar-dark bg-dark">
+        <nav class="navbar navbar-dark bg-dark justify-content-between">
             <a class="navbar-brand" href="#">
                 Document Cards
             </a>
+                             
+            <div class="form-inline mb-0">
+                <input id="search_text" class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                <button  class="btn btn-outline-info my-2 my-sm-0" onclick="search_documents()" type="button">Search</button>
+            </div>
+
         </nav>
-    </header>
+
 
     <main role="main">
         <div class="album py-5 bg-light">
             <div class="container">
-                <div class="row">
+                <div class="row" class="mb-5">
                     <div class="col-3">
                         <form id="upload_file" method="POST" class="custom-file">
-                            <input type="file" name="file" accept="application/pdf"  id="customFile">                            
-                            <input type="submit" value="Upload File">                            
-                        </form>
-                        <br/><br/><br/>
+                            <input class="mb-1" type="file" name="file" accept="application/pdf"  id="customFile">                            
+                            <input class="btn btn-success" type="submit" value="Upload File">                                                                                  
+                        </form> 
+                        <br/>                                                     
+                        <br/>                                                     
                     </div>
                     <hr class="col-12">
                 </div>
@@ -57,9 +80,19 @@
         crossorigin="anonymous"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js" crossorigin="anonymous"></script>
-    <script>
+    <script>        
         var url_endpoint = 'http://127.0.0.1:5000/';
-        $.get(url_endpoint + "getdocuments", function (data, status) {                
+        load_page("");
+        function search_documents(){
+            var query = $("#search_text").val();
+            $( "#circle" ).toggle();
+            load_page(query);
+            $( "#circle" ).toggle();
+        }
+        function load_page(query){
+            $( "#circle" ).toggle();
+            $('#documents').empty();
+            $.get(url_endpoint + "getdocuments/" + query, function (data, status) {                
                 for (var i = 0; i < data.length; i++) {
                     var doc = data[i];
                     doc["words"] = [];
@@ -72,7 +105,7 @@
                     }
                     var word_cloud = '<div id="document-words-' + doc.id + '" style="width: 100%; height: 300px;"></div>';
                     var template = '<div class="col-md-4"><div class="card mb-4 box-shadow"><div class="card-body"><h5 class="card-title">' + doc.name + '</h5><p class="card-text">' + word_cloud + '<small class="text-muted">' + doc.information[0]['/Author'] + '</small></p><div class="d-flex justify-content-between align-items-center">';
-                    template += '<div class="btn-group"><a type="button" class="btn btn-sm btn-outline-secondary" href="preview.html?id=' + doc.id + '">View</a></div></div></div></div></div>';
+                    template += '<div class="btn-group"><a type="button" class="btn btn-success" href="preview.html?id=' + doc.id + '">View</a></div></div></div></div></div>';
                     $('#documents').append(template);
                     
                     $("#document-words-" + doc.id).jQCloud(doc["words"],
@@ -82,14 +115,17 @@
                         });
                     
                 }
-
-        });
+                $( "#circle" ).toggle();
+            });
+        }
+        
         // $.get(url_endpoint + "return-file", function(data, status) {
         //     console.error(data);            
         // })
 
         $("#upload_file").on('submit', (function (e) {
             e.preventDefault();
+            $( "#circle" ).toggle();
             $.ajax({
                     url: "http://127.0.0.1:5000/fileupload",
                     type: "POST",
@@ -103,9 +139,12 @@
                     },
                     success: function (data) {
                         console.error(data);
+                        load_page("");    
+                        $( "#circle" ).toggle();                    
                     },
                     error: function (e) {
                         console.error(e);
+                        $( "#circle" ).toggle();
                     }
                 });
         }));

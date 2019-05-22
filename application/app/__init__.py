@@ -114,9 +114,10 @@ def create_app(config_name):
                 item = item.replace('\r', '')      
                 f.write(item)
 
-    @app.route('/getdocuments', methods=['GET'])
-    def get_files():
-        documents = Document.get_all()
+    @app.route('/getdocuments/', defaults={'query': ""})
+    @app.route('/getdocuments/<query>', methods=['GET'])
+    def get_files(query):
+        documents = Document.query.filter(Document.name.ilike("%"+query+"%"))
         results = []
         basedir = os.path.abspath(os.path.dirname(__file__))
         file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'], str(id))   
