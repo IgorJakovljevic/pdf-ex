@@ -11,7 +11,8 @@
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
         crossorigin="anonymous">
-
+    
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css">
 
 
 <body>
@@ -54,21 +55,38 @@
         crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js" crossorigin="anonymous"></script>
     <script>
         var url_endpoint = 'http://127.0.0.1:5000/';
-        $.get(url_endpoint + "getdocuments", function(data, status) {
-            for(var i = 0; i< data.length; i++){
-                doc = data[i];
-                var template = '<div class="col-md-4"><div class="card mb-4 box-shadow"><div class="card-body"><h5 class="card-title">'+doc.name+'</h5><p class="card-text">Text<br /><br /> <small class="text-muted">'+doc.information[0]['/Author']+'</small></p><div class="d-flex justify-content-between align-items-center">';
-                template += '<div class="btn-group"><a type="button" class="btn btn-sm btn-outline-secondary" href="preview.html?id='+doc.id+'">View</a></div></div></div></div></div>';
-                $('#documents').append(template)
-            }
-            
-        })
+        $.get(url_endpoint + "getdocuments", function (data, status) {                
+                for (var i = 0; i < data.length; i++) {
+                    var doc = data[i];
+                    doc["words"] = [];
+                    var word_dist = data[i]["word_dist"];
+                    for (var j = 0; j < word_dist.length; j++) {
+                        var new_word_dist = {};
+                        new_word_dist["text"] = word_dist[j][0];
+                        new_word_dist["weight"] = word_dist[j][1];
+                        doc["words"].push(new_word_dist);
+                    }
+                    var word_cloud = '<div id="document-words-' + doc.id + '" style="width: 100%; height: 300px;"></div>';
+                    var template = '<div class="col-md-4"><div class="card mb-4 box-shadow"><div class="card-body"><h5 class="card-title">' + doc.name + '</h5><p class="card-text">' + word_cloud + '<small class="text-muted">' + doc.information[0]['/Author'] + '</small></p><div class="d-flex justify-content-between align-items-center">';
+                    template += '<div class="btn-group"><a type="button" class="btn btn-sm btn-outline-secondary" href="preview.html?id=' + doc.id + '">View</a></div></div></div></div></div>';
+                    $('#documents').append(template);
+                    
+                    $("#document-words-" + doc.id).jQCloud(doc["words"],
+                        {
+                            shape: "rectangular",
+                            autoResize: true
+                        });
+                    
+                }
 
-        $.get(url_endpoint + "return-file", function(data, status) {
-            console.error(data);            
-        })
+        });
+        // $.get(url_endpoint + "return-file", function(data, status) {
+        //     console.error(data);            
+        // })
 
         $("#upload_file").on('submit', (function (e) {
             e.preventDefault();

@@ -26,11 +26,16 @@
 
     .scrolling-wrapper .card-image {
       border: 1px solid white;
-      min-width: 350px;
-      max-width: 350px;
       background: black;
       display: inline-block;
       border: 2px dotted gray;
+      margin-right: 1em;
+    }
+
+    .scrolling-wrapper .card-image img {
+      min-width: 350px;
+      min-height: 150px;
+      max-width: 350px;
     }
     
     .search-modal{
@@ -82,7 +87,6 @@
                 <span id="document-keywords" class="badge badge-secondary"></span>
               </div>
             </div>
-            <br /><br />
           </div>
           <div class="col-12">
             <div class="card">
@@ -93,16 +97,23 @@
                 </div>
                 <div class="col-md-8" id="pdf_embed">
                 </div>
-              </div>
-              
+              </div>            
             </div>
-            <br /><br />
           </div>
           <div class="col-md-12">
             <div class="card">
               <div class="card-header" aria-expanded="true" data-toggle="collapse" href="#collapseimgs">Images</div>
               <div id="collapseimgs" class="card-body collapse show">
                 <div id="document-images" class="scrolling-wrapper">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header" aria-expanded="true" data-toggle="collapse" href="#author_data_ctn">Related Work</div>
+              <div id="author_data_ctn" class="card-body collapse show">
+                <div id="author_data">
                 </div>
               </div>
             </div>
@@ -133,10 +144,38 @@
         }
         return true;
     }
+
+    function open_img(img){
+      alert(img);
+    }
     var doc_location = "";
     var images_dir = "";
     function toggleClassSearch(){
       $(".search-modal ").toggleClass("open")
+    }
+    function showRelatedWork(author_data){
+      var template = '<div>';
+      
+      for (let index = 0; index < author_data.length; index++) {
+        var element = author_data[index]['info'];
+        var authors_text = ""
+        if (typeof element['authors']['author'] == 'string') {
+          authors_text = element['authors']['author'];
+        } else {
+          for (let j = 0; j < element['authors']['author'].length; j++) {
+            var author = element['authors']['author'][j];
+            if (j + 1 != element['authors']['author'].length) {
+              authors_text += " " + author + ",";
+            } else {
+              authors_text += " " + author;
+            }
+          }
+        }
+      
+        template += "<h6>"+element['title']+" - " + authors_text+" <a class='btn btn-success' target='_blank' href='"+element['url']+"'>Open in DBLP</a>"+" <a class='btn btn-success' target='_blank' href='"+element['ee']+"'>Read (Venue <strong>"+element['venue']+"</strong>)</a></h6>"
+      }
+      template += '</div>';
+      $('#author_data').append(template);
     }
     function searchTerm(search) {
       var new_bing_link = "loadIframe('bing-search','https://www.bing.com?q="+ search + "')";
@@ -158,7 +197,7 @@
       $('#document-abstract').html(doc.abstract);
       $('#document-keywords').html(doc.keywords);
       for (var i = 0; i < doc.images.length; i++) {
-        $('#document-images').append('<img data-enlargable style="cursor: zoom-in" src="' + images_dir + doc.images[i] + '" class="card-image" />');
+        $('#document-images').append('<div class="card-image"><img data-enlargable style="cursor: zoom-in" src="' + images_dir + doc.images[i] + '"  /><br/><span class="btn btn-primary" onclick=\'open_img("'+doc.images[i]+'")\'>See in PDF</span></div>');
       } 
       $('img[data-enlargable]').addClass('img-enlargable').click(function(){
         var src = $(this).attr('src');
@@ -182,7 +221,8 @@
       // { text: "problem", weight: 44 }
     ];
     $(function () {
-      
+
+
       var options = {
         height: "600px"
       };
@@ -205,6 +245,11 @@
               new_word_dist["weight"] = word_dist[i][1];
               doc.word_list.push(new_word_dist);
             }
+            doc['author_data'] = JSON.parse(data["author_data"]);
+            if(!!doc['author_data']){
+              doc['author_data'] = doc['author_data']['result']['hits']['hit'];
+              showRelatedWork(doc['author_data']);
+            }
             $("#document-words").jQCloud(doc.word_list,
             {
               shape: "rectangular",
@@ -212,10 +257,10 @@
             });
             init_document(doc);   
             searchTerm("");
+
       })
       
       $('#document-words').on("click", "span", function () { searchTerm($(this).text()) });
-      
 
     });
   </script>
