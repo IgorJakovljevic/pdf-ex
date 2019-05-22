@@ -24,6 +24,9 @@
     opacity: 0.7;
     text-align: center;
 }
+.close-modal {
+    display: none !important;
+}
 </style>
 
 <body>
@@ -53,13 +56,53 @@
             <div class="container">
                 <div class="row" class="mb-5">
                     <div class="col-3">
-                        <form id="upload_file" method="POST" class="custom-file">
-                            <input class="mb-1" type="file" name="file" accept="application/pdf"  id="customFile">                            
-                            <input class="btn btn-success" type="submit" value="Upload File">                                                                                  
-                        </form> 
-                        <br/>                                                     
-                        <br/>                                                     
+                        <!-- Modal HTML embedded directly into document -->
+                        <div id="upload_doc" class="modal">
+                                <h3>Upload Document</h3>
+                                <form id="preprocess_file" method="POST">
+                                    <div class="form-group">                                               
+                                        <input class="mb-1" type="file" name="file" accept="application/pdf"  id="customFile">    
+                                    </div>
+                                    <div class="form-group">
+                                        <input id="preprocess_btn" class="btn btn-success" type="submit" value="Generate PDF Title, Author and Abstract">          
+                                    </div>                 
+                                
+                                    <div class="form-group">
+                                        <label for="title_p">Title</label>
+                                        <input type="text" class="form-control" name="title" id="title_p" placeholder="Document Title">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="authors_p">Author(s)</label>
+                                        <input type="text" class="form-control" name="authors" id="authors_p" placeholder="Name Surename, Name Surename ">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="abstract_p">Abstract</label>
+                                        <textarea class="form-control" id="abstract_p" name="abstract" rows="3"></textarea>
+                                    </div>
+                                    <div class="float-right">
+                                        <button class="btn btn-success" rel="modal:close" >Upload</button>
+                                        <a class="btn btn-danger"  href="#" rel="modal:close">Close</a>
+                                    </div>                                    
+                                </form>
+                            
+                            
+                        </div>
+                        
+                        <!-- Link to open the modal -->
+                        <p><a class="btn btn-success"  href="#upload_doc" rel="modal:open">Upload File</a></p>                        
+                                                          
                     </div>
+                    <!-- <div class="col-12">
+                        <form action="http://127.0.0.1:5000/author" method="POST">
+                            <input type="text" name="fullname">
+                            <button type="submit"></button>
+                        </form>
+
+                        <form action="http://127.0.0.1:5000/authors" method="GET">
+                            <input type="text" name="authors">
+                            <button type="submit"></button>
+                        </form>
+                    </div> -->
                     <hr class="col-12">
                 </div>
                 <div id="documents" class="row">
@@ -80,8 +123,14 @@
         crossorigin="anonymous"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js" crossorigin="anonymous"></script>
+    
+    <!-- jQuery Modal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+
     <script>        
         var url_endpoint = 'http://127.0.0.1:5000/';
+        var documents = [];
         load_page("");
         function search_documents(){
             var query = $("#search_text").val();
@@ -92,7 +141,8 @@
         function load_page(query){
             $( "#circle" ).toggle();
             $('#documents').empty();
-            $.get(url_endpoint + "getdocuments/" + query, function (data, status) {                
+            $.get(url_endpoint + "getdocuments/" + query, function (data, status) {         
+                documents = data;       
                 for (var i = 0; i < data.length; i++) {
                     var doc = data[i];
                     doc["words"] = [];
@@ -104,7 +154,7 @@
                         doc["words"].push(new_word_dist);
                     }
                     var word_cloud = '<div id="document-words-' + doc.id + '" style="width: 100%; height: 300px;"></div>';
-                    var template = '<div class="col-md-4"><div class="card mb-4 box-shadow"><div class="card-body"><h5 class="card-title">' + doc.name + '</h5><p class="card-text">' + word_cloud + '<small class="text-muted">' + doc.information[0]['/Author'] + '</small></p><div class="d-flex justify-content-between align-items-center">';
+                    var template = '<div id="document-card-'+doc.id+'" class="col-md-4"><div class="card mb-4 box-shadow"><div class="card-body"><h5 class="card-title">' + doc.name + '</h5><p class="card-text">' + word_cloud + '<small class="text-muted">' + doc.authors + '</small></p><div class="d-flex justify-content-between align-items-center">';
                     template += '<div class="btn-group"><a type="button" class="btn btn-success" href="preview.html?id=' + doc.id + '">View</a></div></div></div></div></div>';
                     $('#documents').append(template);
                     
@@ -122,7 +172,49 @@
         // $.get(url_endpoint + "return-file", function(data, status) {
         //     console.error(data);            
         // })
-
+        //preprocessfile
+        $("#preprocess_file").on('submit', (function (e) {
+            e.preventDefault();
+            $( "#circle" ).toggle();
+            var btn_call = $($(this).find("input[type=submit]:focus")[0])
+            var url = "http://127.0.0.1:5000/upload_file"
+            var preprocess = btn_call.val() == "Generate PDF Title, Author and Abstract";
+            if(preprocess){
+                url = "http://127.0.0.1:5000/preprocessfile";
+            }
+            $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: new FormData(this),
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    success: function (data) {
+                        if(preprocess){
+                            var information = data['information'];
+                            var abstract = data['abstract'];
+                            $('#abstract_p').val(abstract);
+                            if(!!information){
+                                var authors ="";
+                                for (let i = 0; i < information.length; i++) {
+                                    const element = information[i];                                    
+                                    authors += information[i]['/Author'] + ",";
+                                }
+                                $('#authors_p').val(authors);
+                                $('#title_p').val(information[0]['/Title']);                 
+                            }                            
+                            $( "#circle" ).toggle();                       
+                        }else{
+                            load_page("");    
+                            $( "#circle" ).toggle();   
+                        }
+                        
+                    },
+                    error: function (e) {
+                        console.error(e);
+                    }
+                });
+        }));
         $("#upload_file").on('submit', (function (e) {
             e.preventDefault();
             $( "#circle" ).toggle();
@@ -148,6 +240,7 @@
                     }
                 });
         }));
+
     </script>
 
 </body>

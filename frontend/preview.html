@@ -245,11 +245,14 @@
               new_word_dist["weight"] = word_dist[i][1];
               doc.word_list.push(new_word_dist);
             }
-
-            if(!!doc['author_data']){
-                doc['author_data'] = JSON.parse(data["author_data"]);
-              doc['author_data'] = doc['author_data']['result']['hits']['hit'];
-              showRelatedWork(doc['author_data']);
+            console.log(data)
+            if(data['author_data'].length){
+              for (let i = 0; i < data['author_data'].length; i++) {
+                const element = data['author_data'][i];
+                doc['author_data'] = JSON.parse(element);
+                doc['author_data'] = doc['author_data']['result']['hits']['hit'];
+                showRelatedWork(doc['author_data']);                
+              }            
             }
             $("#document-words").jQCloud(doc.word_list,
             {

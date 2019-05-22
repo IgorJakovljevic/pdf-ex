@@ -29,7 +29,7 @@ db = SQLAlchemy()
 
 
 def create_app(config_name):
-    from .models import Document
+    from .models import Document, Author
     app = FlaskAPI(__name__, instance_relative_config=True)
     CORS(app)
     app.config.from_object(app_config[config_name])
@@ -77,6 +77,42 @@ def create_app(config_name):
                     pix1 = None
                 pix = None 
 
+    def extract_abstract_text(folder, file):
+        text = textract.process(folder + file)
+        with open("text.txt", "w") as f:         
+            f.write(text)
+
+        abastract = ""
+        
+        with open("text.txt") as infile:
+            copy = False
+            
+            for line in infile:
+                line = line.strip()
+                if ("abstract" in line or "Abstract" in line):
+                    copy = True
+
+                elif(not line and copy):
+                    break
+                
+                elif "\n" in line or "\r" in line:
+                    copy = False
+                    break
+
+                if copy:                    
+                    abastract += line
+        os.remove("text.txt")
+        return abastract
+
+    def save_words(folder, file, file_id):
+        text = textract.process(folder + file)
+        word_extraction(text, folder, file, file_id)
+
+    def save_abstract(folder, file, file_id, abstract):
+        abstract_file = folder + "/" + str(file_id) +"/abstract.txt"       
+        with open(abstract_file, 'w') as outfile:
+            outfile.write(abstract)
+
     def extract_abstract(folder, file, file_id):
         abstract_file = folder + "/" + str(file_id) +"/abstract.txt"
         text = textract.process(folder + file)
@@ -103,16 +139,63 @@ def create_app(config_name):
                     outfile.write(line)
         os.remove("text.txt")
 
-    def load_save_author_data(file_folder, file_id, file_info):
-        if(len(file_info)>0 and ('/Author' in file_info[0])):
-            author = file_info[0]['/Author']
+    def load_save_author_data(file_folder, file_id, authors):
+        directory = file_folder+ "/" + str(file_id) +"/author/"
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        for ix, author in enumerate(authors):            
             r = requests.get('https://dblp.org/search/publ/api', params={'format': 'json', 'q':author})     
-            authod_data_file = file_folder+ "/" + str(file_id) +"/author_data.json"
+            authod_data_file = directory+str(ix)+".json"
             with open(authod_data_file, "w") as f: 
                 item = json.dumps(r.content)
                 item = item.rstrip('\r')    
                 item = item.replace('\r', '')      
                 f.write(item)
+
+    @app.route('/author', methods=['POST'])
+    def save_author():
+        fullname =  request.form.get('fullname')
+        author = Author(fullname)
+        author.save()
+
+        response = jsonify(author)
+        response.status_code = 200
+        return response
+    
+    @app.route('/author', methods=['GET'])
+    def get_authors():
+        authors = Author.query.order_by(Author.id.desc()).all()
+        results = []
+        for author in authors:
+            obj = {
+            'id': author.id,
+            'name': author.name    
+            }
+            results.append(obj)
+
+        response = jsonify(results)
+        response.status_code = 200
+        return response
+    
+    @app.route('/authors', methods=['GET'])
+    def get_authors_byname():                
+        authors =  request.args.get('authors')        
+        authors = authors.split(',')  
+        authors = [x.lower() for x in authors]  
+        authors = Author.get_all(authors)
+        results = []
+        for author in authors:
+            obj = {
+            'id': author.id,
+            'name': author.name    
+            }
+            results.append(obj)
+
+        response = jsonify(results)
+        response.status_code = 200
+        return response
+
 
     @app.route('/getdocuments/', defaults={'query': ""})
     @app.route('/getdocuments/<query>', methods=['GET'])
@@ -130,7 +213,8 @@ def create_app(config_name):
             if os.path.isfile(word_dist_location):
                 with open(word_dist_location, 'r') as myfile:                    
                     word_dist = json.load(myfile)  
-            
+            print(document.authors)
+            authors = ",".join([author.name for author in document.authors])
             try:               
                 obj = {
                 'id': document.id,
@@ -138,6 +222,7 @@ def create_app(config_name):
                 'date_created': document.date_created,
                 'location': document.location,
                 'information': get_file_info(document.location),
+                'authors': authors,
                 "word_dist": word_dist                 
                 }
                 results.append(obj)
@@ -162,7 +247,7 @@ def create_app(config_name):
         image_locations = []
         abstract = ""
         word_dist = dict()
-        author_data = dict()
+        author_data = []
         if(os.path.isdir(file_dir)):
             image_locations = os.listdir(file_dir + "/images/")  
             abstract_location = file_dir + "/abstract.txt"
@@ -175,14 +260,12 @@ def create_app(config_name):
                 with open(word_dist_location, 'r') as myfile:                    
                     word_dist = json.load(myfile)             
 
-            author_data_file = file_dir + "/author_data.json"   
-            print(abstract_location)
-            print(word_dist_location)
-            print(author_data_file)
-            if os.path.isfile(author_data_file):
-                with open(author_data_file, 'r') as myfile:                    
-                    author_data = json.load(myfile)             
-
+            author_data_locations = os.listdir(file_dir + "/author/") 
+            print(author_data_locations)
+            for author_data_loc in author_data_locations:
+                with open(file_dir + "/author/" +author_data_loc, 'r') as myfile:                    
+                    author_data.append(json.load(myfile))
+                        
             file_dir = file_dir + "/"
 
         results["images"] = image_locations 
@@ -194,15 +277,29 @@ def create_app(config_name):
         response.status_code = 200
         return response
 
+    def add_new_authors(authors):
+        authors = [x.lower() for x in authors]  
+        authors = Author.get_all_new_authors(authors)
+        for author in authors:
+            
+            author = Author(author)
+            author.save()
 
-    @app.route('/fileupload', methods=['POST'])
+
+    @app.route('/upload_file', methods=['POST'])
     def upload_file():
         if request.method == 'POST':            
             # check if the post request has the file part
-            if 'file' not in request.files:
-                print('No file part')
+            if 'file' not in request.files:                
                 return redirect(request.url)
+            print("HERE2")
             file = request.files['file']
+            title =  request.form.get('title')
+            authors =  request.form.get('authors')
+            abstract =  request.form.get('abstract')
+            authors = authors.split(',')
+            add_new_authors(authors)
+            print("HERE1")
             if file.filename == '':
                 flash('No selected file')
                 return redirect(request.url)
@@ -212,15 +309,23 @@ def create_app(config_name):
                 
                 basedir = os.path.abspath(os.path.dirname(__file__))
                 new_path = os.path.join(basedir, app.config['UPLOAD_FOLDER'], filename)
-                
+                print("HERE3")
                 document = Document(name = file.filename, location=new_path)
-                document.save()                
+                authors = [x.lower() for x in authors]  
+                authors = Author.get_all(authors)
+                document.authors = authors
+                print("HERE4")
+                document.save()  
+                print("HERE5")
+                
                 file.save(new_path)
                 file_folder = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
-                extract_image(file_folder, filename, document.id)
-                extract_abstract(file_folder, filename, document.id)
+                extract_image(file_folder, filename, document.id)                
+                save_abstract(file_folder, filename, document.id, abstract)
+                save_words(file_folder, filename, document.id)
                 file_info = get_file_info(document.location)
-                load_save_author_data(file_folder, document.id, file_info)
+                load_save_author_data(file_folder, document.id, authors)
+
                 obj = {
                 'id': document.id,
                 'name': document.name,
@@ -228,6 +333,8 @@ def create_app(config_name):
                 'location': document.location,
                 'information': file_info
                 }
+
+                
                 response = jsonify(obj)
                 response.status_code = 200
                 return response
@@ -243,5 +350,40 @@ def create_app(config_name):
                 <input type=submit value=Upload>
             </form>
             '''
+
+
+    @app.route('/preprocessfile', methods=['POST'])
+    def preprocess_file():
+        if request.method == 'POST':            
+            # check if the post request has the file part
+            if 'file' not in request.files:                
+                return redirect(request.url)
+            file = request.files['file']
+            if file.filename == '':
+                flash('No selected file')
+                return redirect(request.url)
+            
+            try:
+                filename = file.filename
+                temp_location = "temp_preprocess.pdf"
+                basedir = os.path.abspath(os.path.dirname(__file__))
+                file_folder = os.path.join(basedir, app.config['UPLOAD_FOLDER'])
+                new_path = os.path.join(file_folder, temp_location)                                                
+                file.save(new_path)                                
+                abstract = extract_abstract_text(file_folder, temp_location)
+                file_info = get_file_info(new_path)                
+
+                obj = {                
+                'name': filename,
+                'information': file_info,
+                'abstract':abstract
+                }
+                response = jsonify(obj)
+                response.status_code = 200
+                return response
+            except Exception as e: 
+                print(e)       
+        response.status_code = 500
+        return response
 
     return app
