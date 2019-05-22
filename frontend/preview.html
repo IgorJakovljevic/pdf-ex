@@ -245,8 +245,9 @@
               new_word_dist["weight"] = word_dist[i][1];
               doc.word_list.push(new_word_dist);
             }
-            doc['author_data'] = JSON.parse(data["author_data"]);
+
             if(!!doc['author_data']){
+                doc['author_data'] = JSON.parse(data["author_data"]);
               doc['author_data'] = doc['author_data']['result']['hits']['hit'];
               showRelatedWork(doc['author_data']);
             }
