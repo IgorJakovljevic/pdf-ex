@@ -153,6 +153,16 @@ def create_app(config_name):
                 item = item.replace('\r', '')      
                 f.write(item)
 
+    @app.route('/alive', methods=['GET'])
+    def am_alive():
+        try:            
+            response = jsonify({"error":app.config['UPLOAD_FOLDER']})
+        except Exception as e: 
+            response = jsonify({"error":"Set UPLOAD_FOLDER env"})
+        response = jsonify({})
+        response.status_code = 200
+        return response
+
     @app.route('/author', methods=['POST'])
     def save_author():
         fullname =  request.form.get('fullname')
