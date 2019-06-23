@@ -136,6 +136,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js"></script>
   <script>
+    var global_search_term = "";
     function loadIframe(iframeName, url) {
         var $iframe = $('#' + iframeName);
         if ( $iframe.length ) {
@@ -146,7 +147,17 @@
     }
 
     function open_img(img){
-      alert(img);
+      var page_num = parseInt(img.split("-")[0].replace("p",""),10) + 1;
+      var options = {
+        height: "600px",
+        pdfOpenParams: {
+          search: global_search_term,
+          view: 'Fit', 
+          zoom: 50,
+          page: page_num
+        }
+      };      
+      PDFObject.embed(doc_location, "#pdf_embed", options);
     }
     var doc_location = "";
     var images_dir = "";
@@ -158,7 +169,11 @@
       
       for (let index = 0; index < author_data.length; index++) {
         var element = author_data[index]['info'];
-        var authors_text = ""
+        var authors_text = "";
+        if(!!!element['authors']){
+          continue;
+        }
+
         if (typeof element['authors']['author'] == 'string') {
           authors_text = element['authors']['author'];
         } else {
@@ -172,12 +187,13 @@
           }
         }
       
-        template += "<h6>"+element['title']+" - " + authors_text+" <a class='btn btn-success' target='_blank' href='"+element['url']+"'>Open in DBLP</a>"+" <a class='btn btn-success' target='_blank' href='"+element['ee']+"'>Read (Venue <strong>"+element['venue']+"</strong>)</a></h6>"
+        template += "<h6>"+element['title']+" - " + authors_text+" <a class='btn btn-success' target='_blank' href='"+element['url']+"'>Open in DBLP</a>"+" <a class='btn btn-success' target='_blank' href='"+element['ee']+"'>Read (Venue <strong>"+element['venue']+"</strong>)</a></h6><hr>"
       }
       template += '</div>';
       $('#author_data').append(template);
     }
     function searchTerm(search) {
+      global_search_term = search;
       var new_bing_link = "loadIframe('bing-search','https://www.bing.com?q="+ search + "')";
       $('#reload-search').attr('onclick', new_bing_link);
       $('#reload-search').trigger('click')
@@ -234,8 +250,14 @@
             doc.images = data['images'];
             var file_info = data["file_info"][0];
 
-            doc.title = file_info["/Title"];
-            doc.authors = file_info["/Author"];
+            doc.title = data["title"];
+            doc.authors = ""
+            for (let a_ix = 0; a_ix < data["authors"].length; a_ix++) {
+              const element = data["authors"][a_ix];
+              console.log(element)
+              doc.authors += "<a target='_blank' href='author.html?id="+element['id']+"'>" + element['name'] +"</a>";  
+            }
+            
             doc.keywords = file_info["/Keywords"];
             doc.abstract  = data["abstract"];         
             var word_dist  = data["word_dist"];            
@@ -245,7 +267,7 @@
               new_word_dist["weight"] = word_dist[i][1];
               doc.word_list.push(new_word_dist);
             }
-            console.log(data)
+            
             if(data['author_data'].length){
               for (let i = 0; i < data['author_data'].length; i++) {
                 const element = data['author_data'][i];

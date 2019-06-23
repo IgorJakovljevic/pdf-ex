@@ -170,7 +170,8 @@ def create_app(config_name):
         for author in authors:
             obj = {
             'id': author.id,
-            'name': author.name    
+            'name': author.name    ,
+            'documents' : [[document.name, document.id] for document in author.documents] 
             }
             results.append(obj)
 
@@ -178,6 +179,23 @@ def create_app(config_name):
         response.status_code = 200
         return response
     
+
+    @app.route('/getallauthors', methods=['GET'])
+    def get_all_authors():                
+        authors = Author.query.order_by(Author.id.desc()).all()
+        results = []
+        for author in authors:
+            obj = {
+            'id': author.id,
+            'name': author.name ,
+            'documents' : [[document.name, document.id] for document in author.documents] 
+            }
+            results.append(obj)
+
+        response = jsonify(results)
+        response.status_code = 200
+        return response
+
     @app.route('/authors', methods=['GET'])
     def get_authors_byname():                
         authors =  request.args.get('authors')        
@@ -188,7 +206,8 @@ def create_app(config_name):
         for author in authors:
             obj = {
             'id': author.id,
-            'name': author.name    
+            'name': author.name,
+            'documents' : [[document.name, document.id] for document in author.documents] 
             }
             results.append(obj)
 
@@ -196,6 +215,46 @@ def create_app(config_name):
         response.status_code = 200
         return response
 
+    @app.route('/getauthordocuments/<id>', methods=['GET'])
+    def get_author_documents(id):
+        _id = int(id)        
+        author = Author.query.filter_by(id=_id).first()
+        author_name = author.name
+        documents = author.documents
+
+        results = []
+        result = {}
+        basedir = os.path.abspath(os.path.dirname(__file__))
+        file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'], str(id))   
+
+        for document in documents:
+            
+            file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'], str(document.id))               
+            word_dist = dict()
+            word_dist_location = file_dir + "/worddist.json" 
+            if os.path.isfile(word_dist_location):
+                with open(word_dist_location, 'r') as myfile:                    
+                    word_dist = json.load(myfile)  
+            print(document.authors)
+            authors = ",".join([author.name for author in document.authors])
+            try:               
+                obj = {
+                'id': document.id,
+                'name': document.name,
+                'date_created': document.date_created,
+                'location': document.location,
+                'information': get_file_info(document.location),
+                'authors': authors,
+                "word_dist": word_dist                 
+                }
+                results.append(obj)
+            except Exception as e:
+                continue
+        result['documents']= results
+        result['author']= author_name
+        response = jsonify(result)
+        response.status_code = 200
+        return response
 
     @app.route('/getdocuments/', defaults={'query': ""})
     @app.route('/getdocuments/<query>', methods=['GET'])
@@ -240,8 +299,9 @@ def create_app(config_name):
         location = get_file_info(document.location)
         results = dict()
         results["file_info"] = location
-        results["location"] = document.location
-        
+        results["location"] = document.location        
+        results["authors"] = [{"name": author.name, "id": author.id}for author in document.authors]
+        results["title"] = document.name
         basedir = os.path.abspath(os.path.dirname(__file__))
         file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'], str(id))    
         image_locations = []

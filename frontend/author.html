@@ -1,0 +1,174 @@
+<html lang="en" data-lt-installed="true" class="gr__getbootstrap_com">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Document Cards</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
+    
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css">
+<style>
+#circle {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    z-index: 10;
+    background: black;
+    opacity: 0.7;
+    text-align: center;
+}
+.close-modal {
+    display: none !important;
+}
+</style>
+
+<body>
+    <div id="circle">
+        <img src="source.gif" style="
+            margin-top: 5%;
+            height: 80%;
+        ">
+    </div>
+
+        <!-- Just an image -->
+        <nav class="navbar navbar-dark bg-dark justify-content-between">
+            <a class="navbar-brand" href="index.html">
+                Document Cards
+            </a>
+                             
+        </nav>
+
+
+    <main role="main">
+        <div class="album py-5 bg-light">
+            <div class="container">
+                <div class="row" class="mb-5">
+                    <div class="col-3">
+                        <div class="card-header" aria-expanded="true" data-toggle="collapse" href="#collapseabstract">                           
+                            <h5>Author: <span id="document-author"></span></h5>
+                        </div>   
+                                                          
+                    </div>
+                    
+                    <hr class="col-12">
+                </div>
+                <div id="documents" class="row">
+                    
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js" crossorigin="anonymous"></script>
+    
+    <!-- jQuery Modal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.9.1/jquery.modal.min.css" />
+
+    <script>        
+        var url_endpoint = 'http://127.0.0.1:5000/';
+        var documents = [];
+        
+        
+        var getauthordocuments = location.search.replace('?id=', "");
+        load_page(getauthordocuments);
+ 
+        function load_page(query){
+            $( "#circle" ).toggle();
+            $('#documents').empty();
+            $.get(url_endpoint + "getauthordocuments/" + query, function (data, status) {         
+                author = data['author'];
+                data = data['documents'];       
+                $("#document-author").html(author);                
+                for (var i = 0; i < data.length; i++) {
+                    var doc = data[i];
+                    doc["words"] = [];
+                    var word_dist = data[i]["word_dist"];
+                    for (var j = 0; j < word_dist.length; j++) {
+                        var new_word_dist = {};
+                        new_word_dist["text"] = word_dist[j][0];
+                        new_word_dist["weight"] = word_dist[j][1];
+                        doc["words"].push(new_word_dist);
+                    }
+                    var word_cloud = '<div id="document-words-' + doc.id + '" style="width: 100%; height: 300px;"></div>';
+                    var template = '<div id="document-card-'+doc.id+'" class="col-md-4"><div class="card mb-4 box-shadow"><div class="card-body"><h5 class="card-title">' + doc.name + '</h5><p class="card-text">' + word_cloud + '<small class="text-muted">' + doc.authors + '</small></p><div class="d-flex justify-content-between align-items-center">';
+                    template += '<div class="btn-group"><a type="button" class="btn btn-success" href="preview.html?id=' + doc.id + '">View</a></div></div></div></div></div>';
+                    $('#documents').append(template);
+                    
+                    $("#document-words-" + doc.id).jQCloud(doc["words"],
+                        {
+                            shape: "rectangular",
+                            autoResize: true
+                        });
+                    
+                }
+                $( "#circle" ).toggle();
+            });
+        }
+        
+        $("#preprocess_file").on('submit', (function (e) {
+            e.preventDefault();
+            $( "#circle" ).toggle();
+            var btn_call = $($(this).find("input[type=submit]:focus")[0])
+            var url = "http://127.0.0.1:5000/upload_file"
+            var preprocess = btn_call.val() == "Generate PDF Title, Author and Abstract";
+            if(preprocess){
+                url = "http://127.0.0.1:5000/preprocessfile";
+            }
+            $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: new FormData(this),
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    success: function (data) {
+                        if(preprocess){
+                            var information = data['information'];
+                            var abstract = data['abstract'];
+                            $('#abstract_p').val(abstract);
+                            if(!!information){
+                                var authors ="";
+                                for (let i = 0; i < information.length; i++) {
+                                    const element = information[i];                                    
+                                    authors += information[i]['/Author'] + ",";
+                                }
+                                $('#authors_p').val(authors);
+                                $('#title_p').val(information[0]['/Title']);                 
+                            }                            
+                            $( "#circle" ).toggle();                       
+                        }else{
+                            load_page("");    
+                            $( "#circle" ).toggle();   
+                        }
+                        
+                    },
+                    error: function (e) {
+                        console.error(e);
+                    }
+                });
+        }));
+
+
+    </script>
+
+</body>
+
+</html>
