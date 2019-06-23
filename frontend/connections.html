@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Connections</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet">
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css">
+
+
+</head>
+<body>
+<div id="mynetwork"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+<!-- Bootstrap core JavaScript
+  ================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js"></script>
+
+<script type="text/javascript">
+
+    var url_endpoint = 'http://127.0.0.1:5000/';
+
+    load_data();
+
+    var nodes_list = [];
+    var edges_list = [];
+
+    function load_data() {
+
+        $.get(url_endpoint + "author", function (data) {
+            var documentMap = new Map();
+            var documentTitles = new Map();
+            for (var i = 0; i < data.length; i++) {
+                var newNode = {};
+                newNode.id = 'n' + data[i].id;
+                newNode.label = data[i].name;
+                nodes_list.push(newNode);
+                for (var j = 0; j < data[i].documents.length; j++) {
+                    var documentId = data[i].documents[j][1];
+                    if (documentMap.has(documentId)) {
+                        documentMap.get(documentId).push(data[i].id);
+                    } else {
+                        documentMap.set(documentId, [data[i].id]);
+                    }
+                    if (!documentTitles.has(documentId)) {
+                        documentTitles.set(documentId, data[i].documents[j][0]);
+                    }
+                }
+            }
+            edges_list = create_edge_list(documentMap, documentTitles);
+            init_network();
+        })
+    }
+
+    function create_edge_list(documentMap, documentTitles) {
+        var ret_val = [];
+        for (var [key, value] of documentMap.entries()) {
+            for (var i = 0; i < value.length - 1; i++) {
+                for (var j = i + 1; j < value.length; j++) {
+                    var newEdge = {};
+                    newEdge.from = 'n' + value[i].toString();
+                    newEdge.to = 'n' + value[j].toString();
+                    newEdge.label = documentTitles.get(key);
+                    console.log(newEdge);
+                    ret_val.push(newEdge);
+                }
+            }
+        }
+        return ret_val;
+    }
+
+    function init_network() {
+        var nodes = new vis.DataSet(nodes_list);
+        /***
+         * [
+         {id: 'n1', label: 'Node 1'},
+         {id: 'n2', label: 'Node 2'}
+         ]
+         *
+         * */
+
+        var edges = new vis.DataSet(edges_list);
+
+        /***
+         *[
+         {from: 'n1', to: 'n2', id:'12'}
+         ]
+         */
+            // create a network
+        var container = document.getElementById('mynetwork');
+
+        // provide the data in the vis format
+        var data = {
+            nodes: nodes,
+            edges: edges
+        };
+        var options = {
+            autoResize: true,
+            height: '400px',
+            width: '400px'
+        };
+
+        // initialize your network!
+        var network = new vis.Network(container, data, options);
+    }
+
+</script>
+
+
+</body>
+</html>
