@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Keyword search</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet">
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css">
+
+
+</head>
+<body>
+<!-- Just an image -->
+<nav class="navbar navbar-dark bg-dark justify-content-between">
+    <a class="navbar-brand" href="index.html">
+        Document Cards
+    </a>
+
+</nav>
+
+
+<main role="main">
+    <div class="album py-5 bg-light">
+        <div class="container">
+            <div id="mynetwork"></div>
+
+
+        </div>
+    </div>
+
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+<!-- Bootstrap core JavaScript
+  ================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js"></script>
+
+<script type="text/javascript">
+
+    var url_endpoint = 'http://127.0.0.1:5000/';
+    var keyword_list = ["keyword", "keyword2"];
+    var a = {"keyword": [[1, "doc1"], [2, "doc2"]], "keyword2": [[3, 'doc3'], [2, "doc2"]]};
+
+    load_page();
+
+    function load_page() {
+        var nodes_list = [];
+        var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+            '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
+            '#80B300', '#809900', '#E6B3B3', '#6680B3', '#66991A',
+            '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC',
+            '#66994D', '#B366CC', '#4D8000', '#B33300', '#CC80CC',
+            '#66664D', '#991AFF', '#E666FF', '#4DB3FF', '#1AB399',
+            '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
+            '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
+            '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
+            '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'];
+
+        for(var i = 0; i < keyword_list.length; i++){
+            var documents = a[keyword_list[i]];
+            for(var j = 0; j < documents.length; j++){
+                var newNode = {};
+                newNode.color = colorArray[i];
+                newNode.title = keyword_list[i];
+                newNode.label = documents[j][1];
+                newNode.id = i + '_' + documents[j][0];
+                nodes_list.push(newNode);
+            }
+        }
+
+        init_network(nodes_list);
+    }
+
+    function init_network(nodes_list) {
+        var nodes = new vis.DataSet(nodes_list);
+        var container = document.getElementById('mynetwork');
+        var data = {
+            nodes: nodes
+        };
+        var options = {
+            autoResize: true,
+            height: '800',
+            width: '100%'
+        };
+
+        // initialize your network!
+        var network = new vis.Network(container, data, options);
+
+
+    }
+</script>
+
+
+</body>
+</html>
