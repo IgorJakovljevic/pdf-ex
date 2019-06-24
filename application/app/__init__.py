@@ -213,7 +213,7 @@ def create_app(config_name):
                         word_str = word[0]                        
                         if word_str in keywords:
                             result_documents[word_str].append([document.id, document.name])
-                            break
+                            
         
         response = jsonify(result_documents)
         response.status_code = 200
