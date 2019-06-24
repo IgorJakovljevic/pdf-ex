@@ -188,7 +188,38 @@ def create_app(config_name):
         response = jsonify(results)
         response.status_code = 200
         return response
-    
+
+    @app.route('/documentclusters', methods=['GET'])    
+    def get_documents_clusters():
+        keywords =  request.args.get('keywords')
+        keywords = keywords.split(',')
+        documents = Document.get_all()
+        result_documents = dict()
+        for keyword in keywords:
+            result_documents[keyword] = []
+
+        word_level = 20
+        
+        basedir = os.path.abspath(os.path.dirname(__file__))
+        for document in documents:
+            file_dir = os.path.join(basedir, app.config['UPLOAD_FOLDER'], str(document.id)) 
+            word_dist_location = file_dir + "/worddist.json"       
+            if os.path.isfile(word_dist_location):
+                with open(word_dist_location, 'r') as myfile:                    
+                    word_dist = json.load(myfile)   
+                    for ix, word in enumerate(word_dist):                        
+                        if(ix > word_level):
+                            break
+                        word_str = word[0]                        
+                        if word_str in keywords:
+                            result_documents[word_str].append([document.id, document.name])
+                            break
+        
+        response = jsonify(result_documents)
+        response.status_code = 200
+        return response
+
+
 
     @app.route('/getallauthors', methods=['GET'])
     def get_all_authors():                
