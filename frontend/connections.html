@@ -76,8 +76,8 @@
                     var newEdge = {};
                     newEdge.from = 'n' + value[i].toString();
                     newEdge.to = 'n' + value[j].toString();
-                    newEdge.label = documentTitles.get(key);
-                    console.log(newEdge);
+                    newEdge.title = documentTitles.get(key); //tooltip
+                    newEdge.id = value[i] + '_' + value[j] + '_' + key;
                     ret_val.push(newEdge);
                 }
             }
@@ -118,6 +118,18 @@
 
         // initialize your network!
         var network = new vis.Network(container, data, options);
+
+        network.on('selectNode', function (data) {
+            var id = data.nodes[0].substring(1);
+            console.log(id);
+            window.location.href = 'author.html?id=' + id;
+        });
+
+        network.on('selectEdge', function (data) {
+            var divided = data.edges[0].split("_");
+            var id = divided.pop();
+            window.location.href = 'preview.html?id=' + id;
+        })
     }
 
 </script>
