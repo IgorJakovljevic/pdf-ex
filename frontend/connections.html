@@ -15,7 +15,25 @@
 
 </head>
 <body>
-<div id="mynetwork"></div>
+       <!-- Just an image -->
+       <nav class="navbar navbar-dark bg-dark justify-content-between">
+            <a class="navbar-brand" href="index.html">
+                Document Cards
+            </a>
+                             
+        </nav>
+
+
+    <main role="main">
+        <div class="album py-5 bg-light">
+            <div class="container">
+                    <div id="mynetwork"></div>
+                    
+                
+            </div>
+        </div>
+
+    </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
 <!-- Bootstrap core JavaScript
   ================================================== -->
@@ -87,49 +105,36 @@
 
     function init_network() {
         var nodes = new vis.DataSet(nodes_list);
-        /***
-         * [
-         {id: 'n1', label: 'Node 1'},
-         {id: 'n2', label: 'Node 2'}
-         ]
-         *
-         * */
-
         var edges = new vis.DataSet(edges_list);
-
-        /***
-         *[
-         {from: 'n1', to: 'n2', id:'12'}
-         ]
-         */
-            // create a network
         var container = document.getElementById('mynetwork');
-
-        // provide the data in the vis format
         var data = {
             nodes: nodes,
             edges: edges
         };
         var options = {
             autoResize: true,
-            height: '400px',
-            width: '400px'
+            height: '800',
+            width: '100%'
         };
 
         // initialize your network!
         var network = new vis.Network(container, data, options);
-
-        network.on('selectNode', function (data) {
-            var id = data.nodes[0].substring(1);
-            console.log(id);
-            window.location.href = 'author.html?id=' + id;
+        
+        
+        network.on('doubleClick', function (data) {
+            if(data['nodes'].length){
+                var id = data.nodes[0].substring(1);
+                window.location.href = 'author.html?id=' + id;
+            }else{
+                var divided = data.edges[0].split("_");
+                var id = divided.pop();
+                window.location.href = 'preview.html?id=' + id;
+            }
+            
+            
+            deadlock = false;
         });
 
-        network.on('selectEdge', function (data) {
-            var divided = data.edges[0].split("_");
-            var id = divided.pop();
-            window.location.href = 'preview.html?id=' + id;
-        })
     }
 
 </script>
