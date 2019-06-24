@@ -20,7 +20,10 @@
     <a class="navbar-brand" href="index.html">
         Document Cards
     </a>
-
+    <div class="form-inline mb-0">
+        <input id="search_text" class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+        <button class="btn btn-outline-info my-2 my-sm-0" onclick="search_documents()" type="button">Search</button>
+    </div>
 </nav>
 
 
@@ -53,33 +56,52 @@
 <script type="text/javascript">
 
     var url_endpoint = 'http://127.0.0.1:5000/';
-    var keyword_list = ["keyword", "keyword2"];
-    var a = {"keyword": [[1, "doc1"], [2, "doc2"]], "keyword2": [[3, 'doc3'], [2, "doc2"]]};
+    var keyword_list = [];
+    var a = {};
+    var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+        '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
+        '#80B300', '#809900', '#E6B3B3', '#6680B3', '#66991A',
+        '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC',
+        '#66994D', '#B366CC', '#4D8000', '#B33300', '#CC80CC',
+        '#66664D', '#991AFF', '#E666FF', '#4DB3FF', '#1AB399',
+        '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
+        '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
+        '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
+        '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'];
 
-    load_page();
+    function send_request(query) {
+        $.get(url_endpoint+'documentclusters?keywords=' + query, function (data) {
+            a = data;
+            console.log(a);
+            load_page();
+        })
+    }
+
+    function search_documents() {
+        var query = $("#search_text").val();
+        keyword_list = query.split(",");
+        send_request(query);
+
+    }
+
 
     function load_page() {
         var nodes_list = [];
-        var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
-            '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
-            '#80B300', '#809900', '#E6B3B3', '#6680B3', '#66991A',
-            '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC',
-            '#66994D', '#B366CC', '#4D8000', '#B33300', '#CC80CC',
-            '#66664D', '#991AFF', '#E666FF', '#4DB3FF', '#1AB399',
-            '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
-            '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
-            '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
-            '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'];
 
-        for(var i = 0; i < keyword_list.length; i++){
+
+        for (var i = 0; i < keyword_list.length; i++) {
+            console.log('---------------');
+            console.log(keyword_list[i]);
             var documents = a[keyword_list[i]];
-            for(var j = 0; j < documents.length; j++){
+            console.log(documents);
+            for (var j = 0; j < documents.length; j++) {
                 var newNode = {};
                 newNode.color = colorArray[i];
                 newNode.title = keyword_list[i];
                 newNode.label = documents[j][1];
                 newNode.id = i + '_' + documents[j][0];
                 nodes_list.push(newNode);
+                console.log(newNode);
             }
         }
 
@@ -102,6 +124,42 @@
         var network = new vis.Network(container, data, options);
 
 
+        cluster_network(network);
+        network.on("selectNode", function (params) {
+            if (params.nodes.length == 1) {
+                if (network.isCluster(params.nodes[0]) == true) {
+                    network.openCluster(params.nodes[0]);
+                }
+            }
+        });
+    }
+
+    function cluster_network(network) {
+        var clusterOptionsByData;
+        for (var j = 0; j < keyword_list.length; j++) {
+            var color = colorArray[j];
+            clusterOptionsByData = {
+                joinCondition: function (childOptions) {
+                    return childOptions.color.background == color; // the color is fully defined in the node.
+                },
+                processProperties: function (clusterOptions, childNodes, childEdges) {
+                    var totalMass = 0;
+                    for (var i = 0; i < childNodes.length; i++) {
+                        totalMass += childNodes[i].mass;
+                    }
+                    clusterOptions.mass = totalMass;
+                    return clusterOptions;
+                },
+                clusterNodeProperties: {
+                    id: 'cluster:' + color,
+                    borderWidth: 3,
+                    shape: 'database',
+                    color: color,
+                    label: keyword_list[j]
+                }
+            };
+            network.cluster(clusterOptionsByData);
+        }
     }
 </script>
 
