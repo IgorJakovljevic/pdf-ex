@@ -1,144 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Connections</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
-          crossorigin="anonymous">
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css">
 
 
 </head>
+
 <body>
-       <!-- Just an image -->
-       <nav class="navbar navbar-dark bg-dark justify-content-between">
-            <a class="navbar-brand" href="index.html">
-                Document Cards
-            </a>
-                             
-        </nav>
+    <!-- Just an image -->
+    <nav class="navbar navbar-dark bg-dark justify-content-between">
+        <a class="navbar-brand" href="index.html">
+            Document Cards
+        </a>
+
+    </nav>
 
 
     <main role="main">
         <div class="album py-5 bg-light">
             <div class="container">
-                    <div id="mynetwork"></div>
-                    
-                
+                <div id="mynetwork"></div>
+
+
             </div>
         </div>
 
     </main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
-<!-- Bootstrap core JavaScript
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <!-- Bootstrap core JavaScript
   ================================================== -->
-<!-- Placed at the end of the document so the pages load faster -->
+    <!-- Placed at the end of the document so the pages load faster -->
 
-<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
         integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
         crossorigin="anonymous"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js"
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js"
         crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js"></script>
 
-<script type="text/javascript">
+    <script type="text/javascript">
 
-    var url_endpoint = 'http://127.0.0.1:5000/';
+        var url_endpoint = 'http://127.0.0.1:5000/';
 
-    load_data();
+        load_data();
 
-    var nodes_list = [];
-    var edges_list = [];
+        var nodes_list = [];
+        var edges_list = [];
 
-    function load_data() {
+        function load_data() {
 
-        $.get(url_endpoint + "author", function (data) {
-            var documentMap = new Map();
-            var documentTitles = new Map();
-            for (var i = 0; i < data.length; i++) {
-                var newNode = {};
-                newNode.id = 'n' + data[i].id;
-                newNode.label = data[i].name;
-                nodes_list.push(newNode);
-                for (var j = 0; j < data[i].documents.length; j++) {
-                    var documentId = data[i].documents[j][1];
-                    if (documentMap.has(documentId)) {
-                        documentMap.get(documentId).push(data[i].id);
-                    } else {
-                        documentMap.set(documentId, [data[i].id]);
-                    }
-                    if (!documentTitles.has(documentId)) {
-                        documentTitles.set(documentId, data[i].documents[j][0]);
+            $.get(url_endpoint + "author", function (data) {
+                var documentMap = new Map();
+                var documentTitles = new Map();
+                for (var i = 0; i < data.length; i++) {
+                    var newNode = {};
+                    newNode.id = 'n' + data[i].id;
+                    newNode.label = data[i].name;
+                    nodes_list.push(newNode);
+                    for (var j = 0; j < data[i].documents.length; j++) {
+                        var documentId = data[i].documents[j][1];
+                        if (documentMap.has(documentId)) {
+                            documentMap.get(documentId).push(data[i].id);
+                        } else {
+                            documentMap.set(documentId, [data[i].id]);
+                        }
+                        if (!documentTitles.has(documentId)) {
+                            documentTitles.set(documentId, data[i].documents[j][0]);
+                        }
                     }
                 }
-            }
-            edges_list = create_edge_list(documentMap, documentTitles);
-            init_network();
-        })
-    }
-
-    function create_edge_list(documentMap, documentTitles) {
-        var ret_val = [];
-        for (var [key, value] of documentMap.entries()) {
-            for (var i = 0; i < value.length - 1; i++) {
-                for (var j = i + 1; j < value.length; j++) {
-                    var newEdge = {};
-                    newEdge.from = 'n' + value[i].toString();
-                    newEdge.to = 'n' + value[j].toString();
-                    newEdge.title = documentTitles.get(key); //tooltip
-                    newEdge.id = value[i] + '_' + value[j] + '_' + key;
-                    ret_val.push(newEdge);
-                }
-            }
+                edges_list = create_edge_list(documentMap, documentTitles);
+                init_network();
+            })
         }
-        return ret_val;
-    }
 
-    function init_network() {
-        var nodes = new vis.DataSet(nodes_list);
-        var edges = new vis.DataSet(edges_list);
-        var container = document.getElementById('mynetwork');
-        var data = {
-            nodes: nodes,
-            edges: edges
-        };
-        var options = {
-            autoResize: true,
-            height: '800',
-            width: '100%'
-        };
+        function create_edge_list(documentMap, documentTitles) {
+            var ret_val = [];
+            for (var [key, value] of documentMap.entries()) {
+                for (var i = 0; i < value.length - 1; i++) {
+                    for (var j = i + 1; j < value.length; j++) {
+                        var newEdge = {};
+                        newEdge.from = 'n' + value[i].toString();
+                        newEdge.to = 'n' + value[j].toString();
+                        newEdge.title = documentTitles.get(key); //tooltip
+                        newEdge.id = value[i] + '_' + value[j] + '_' + key;
+                        //newEdge.icon = {"face": "FontAwesome", code: '\uf0c0', size: 50, color: 'orange'};
 
-        // initialize your network!
-        var network = new vis.Network(container, data, options);
-        
-        
-        network.on('doubleClick', function (data) {
-            if(data['nodes'].length){
-                var id = data.nodes[0].substring(1);
-                window.location.href = 'author.html?id=' + id;
-            }else{
-                var divided = data.edges[0].split("_");
-                var id = divided.pop();
-                window.location.href = 'preview.html?id=' + id;
+                        ret_val.push(newEdge);
+                    }
+                }
             }
-            
-            
-            deadlock = false;
-        });
+            return ret_val;
+        }
 
-    }
+        function init_network() {
+            var nodes = new vis.DataSet(nodes_list);
+            var edges = new vis.DataSet(edges_list);
+            var container = document.getElementById('mynetwork');
+            var data = {
+                nodes: nodes,
+                edges: edges
+            };
+            var options = {
+                
+                autoResize: true,
+                height: '800',
+                width: '100%'                              
+            };
 
-</script>
+            // initialize your network!
+            var network = new vis.Network(container, data, options);
+
+
+            network.on('doubleClick', function (data) {
+                if (data['nodes'].length) {
+                    var id = data.nodes[0].substring(1);
+                    window.location.href = 'author.html?id=' + id;
+                } else {
+                    var divided = data.edges[0].split("_");
+                    var id = divided.pop();
+                    window.location.href = 'preview.html?id=' + id;
+                }
+
+
+                deadlock = false;
+            });
+
+        }
+
+    </script>
 
 
 </body>
+
 </html>
